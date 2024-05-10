@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Models\Feature;
 use App\Models\Product;
 
 class ProductController extends Controller
 {
 // category funct
 public function view(){
-    $categories = Category::all();
+    $categories = Category::withCount('products')->paginate(10);
     return view('category',compact('categories'));
 }
 
@@ -37,7 +38,12 @@ public function stores(Request $request){
      */
     public function index()
     {
-        return view('products');
+        $categories = Category::all();
+        $features = Feature::all();
+
+        $products = Product::with('categories', 'features')->paginate(10);
+
+        return view('products',compact('categories', 'features','products'));
     }
 
     /**
@@ -53,14 +59,40 @@ public function stores(Request $request){
      */
     public function store(Request $request)
     {
-        $product = new Product;
-        $product->name = $request->name;
-        $product->caregory = $request->category;
-        $product->feature = $request->feature;
-        dd($product);
-        $product->save();
-        return redirect()->back()->with('message','product added successfully');
 
+
+        // Validate request
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        // Upload image
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('uploads', $filename, 'public');
+            $imagePath = asset('storage/' . $path);
+        } else {
+            $imagePath = null;
+        }
+
+        // Store product
+        $product = new Product();
+        $product->name = $request->name;
+        $product->image = $imagePath;
+        $product->save();
+
+        // Attach categories
+        $product->categories()->attach($request->category_id);
+
+        // Attach features
+        $product->features()->attach($request->feature_id);
+
+
+
+
+
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
     /**

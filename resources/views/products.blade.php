@@ -1,48 +1,50 @@
 @extends('layouts.admin', ['title' => 'Products'])
 
 @section('mainContent')
-<div class="text-end my-2">
-    <p class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#add_product_modal">Add Product</p>
-</div>
+    <div class="text-end my-2">
+        @if (auth()->user()->user_type == 'admin' || (auth()->user()->user_type == 'vendor'))
+            <p class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#add_product_modal">Add Product</p>
+        @endif
+
+    </div>
     <div class="container">
         <div class="products mb-3">
-            @for($p=1; $p < 6 ; $p++)
+            @foreach ($products as $product)
                 <div class="__single">
-                <div class="image">
-                    <img class="w-100" src="https://www.bdshop.com/pub/media/catalog/product/cache/eaf695a7c2edd83636a0242f7ce59484/b/a/baseus_6-in-1_usb_c_hub.jpg" alt="">
-                </div>
-                <div>
-                    <h2>Best Electronics update In 2024</h2>
+                    <div class="image">
+                        @if ($product->image)
+                            <img src='{{ $product->image }}' alt="" width="80">
+                        @else
+                            <img src='https://ui-avatars.com/api/?background=random&color=fff&name={{ $product->name }}'
+                                alt="" width="80">
+                        @endif
+                    </div>
                     <div>
-                        <p class="fw-bold m-0">Categories:</p>
+                        <h2>{{ $product->name }}</h2>
                         <div>
-                            @for($i=0; $i < 4 ; $i++)
-                                <span class="badge bg-info text-capitalize">category 1</span>
-                            @endfor
+                            <p class="fw-bold m-0">Categories:</p>
+                            <div>
+                                @foreach ($product->categories as $category)
+                                    <span class="badge bg-info text-capitalize">{{ $category->name }}</span>
+                                @endforeach
+
+                            </div>
+                        </div>
+                        <div>
+                            <p class="fw-bold m-0">Features:</p>
+                            <ul>
+                                @foreach ($product->features as $feature)
+                                    <li class="text-capitalize">{{ $feature->name }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
-                    <div>
-                        <p class="fw-bold m-0">Features:</p>
-                        <ul>
-                            @for($i=0; $i < 4 ; $i++)
-                                <li class="text-capitalize">{{ 'feature'.$i }}</li>
-                            @endfor
-                        </ul>
-                    </div>
                 </div>
-            </div>
-            @endfor
+            @endforeach
+            {{ $products->links('pagination::bootstrap-4') }}
         </div>
 
-        <nav aria-label="Page navigation example mt-2">
-            <ul class="pagination">
-                <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">Next</a></li>
-            </ul>
-        </nav>
+
     </div>
 
     <script>
@@ -50,47 +52,58 @@
     </script>
 
 
-<!-- Add Product Modal -->
-<div class="modal fade" id="add_product_modal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ route('products.store') }}" method="POST">
-                    @csrf
-                    <!-- Product Name -->
-                    <div class="mb-3">
-                        <label for="product_name" class="form-label">Product Name</label>
-                        <input type="text" class="form-control" id="product_name" name="product_name" required>
-                    </div>
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="add_product_modal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
 
-                    <!-- Category Selection -->
-                    <div class="mb-3">
-                        <label for="product_name" class="form-label">category</label>
-                        <input type="text" class="form-control" id="product_name" name="product_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="product_name" class="form-label">feature</label>
-                        <input type="text" class="form-control" id="product_name" name="product_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="product_name" class="form-label">image</label>
-                        <input type="text" class="form-control" id="product_name" name="product_name" required>
-                    </div>
+                    <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <!-- Product Name -->
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="product_name" name="name" required>
+                        </div>
 
-                    
+                        <!-- Category Selection -->
+                        <div class="mb-3">
+                            <label for="category_name" class="form-label">Category</label>
+                            <Select id="category_name" class="form-control select2" name="category_id[]" multiple>
+                                <option> Select Categories </option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}"> {{ $category->name }} </option>
+                                @endforeach
+                            </Select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feature_name" class="form-label">Feature</label>
+                            <Select id="feature_name" class="form-control select2" name="feature_id[]" multiple>
+                                <option> Select Features </option>
+                                @foreach ($features as $feature)
+                                    <option value="{{ $feature->id }}"> {{ $feature->name }} </option>
+                                @endforeach
+                            </Select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label">image</label>
+                            <input type="file" class="form-control" id="product_name" name="image">
+                        </div>
 
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
 @endsection

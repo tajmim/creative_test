@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\FeatureController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePicController;
@@ -32,3 +33,4 @@ Route::post('/store/profilepicture', [ProfilePicController::class, 'store'])->na
 Route::get('/view_category', [ProductController::class, 'view'])->name('view.category');
 Route::post('/add_category', [ProductController::class, 'stores'])->name('stores.category');
 Route::resource('products', ProductController::class);
+Route::resource('features', FeatureController::class);
